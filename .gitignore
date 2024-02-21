@@ -1,4 +1,6 @@
-/main
-/photo.ppm
-/config.txt
-/vscode
+main
+photo.ppm
+config.txt
+.vscode
+a.out
+test
