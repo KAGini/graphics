@@ -1,5 +1,6 @@
 #include <fstream>
-#include <string>
+#include <iostream>
+#include <utility>
 #include "geometry.hpp"
 
 using namespace std;
@@ -7,28 +8,31 @@ using namespace std;
 const string INPUT_FILE_NAME = "config.txt";
 const string OUTPUT_FILE_NAME = "photo.ppm";
 
-class Color {
+class Light {
 public:
-    Color(): r(0), g(0), b(0) {}
-    Color(double _r, double _g, double _b): r(_r), g(_g), b(_b) {}
+    Light(): S(Point()), intensity(1) {}
+    Light(Point _S, double _intensity): S(_S), intensity(_intensity) {}
 
-    double r, g, b;
-
-    string ToPrint(double L) {
-        return to_string(int(r * L)) + " " + to_string(int(g * L)) + " " + to_string(int(b * L));
-    }    
+    Point S;
+    double intensity;
 };
 
-class Light: public Ray {
-public:
-    Light(): Ray(), brightness(1) {}
-    Light(double _x, double _y, double _z, double _px, double _py, double _pz, double bright): 
-        Ray(x0, y0, z0, px, py, pz), brightness(bright) 
-    {}
-    Light(Point A, Vector v, double bright): Ray(A, v), brightness(bright) {}
-    
-    double brightness;  
-};
+pair<Point, Sphere> GetClosestIntersection(const vector<Sphere>& spheres, Ray r) {
+    Point I(INF, INF, INF);
+    double mdist = INF;
+    Sphere S;
+    for (auto& s : spheres) {
+        Point I2 = GetIntersection(s, r);
+        if (I2.x == INF) continue;
+        double dist = GetDistance(I2, r.C);
+        if (dist < mdist) {
+            mdist = dist;
+            I = I2;
+            S = s;
+        }
+    }
+    return {I, S};
+}
 
 void RenderPPM(vector<vector<Color>>& screen) {
     ofstream fout(OUTPUT_FILE_NAME);
@@ -48,25 +52,58 @@ void RenderPPM(vector<vector<Color>>& screen) {
     fout.close();
 }
 
-void Play() {
+void Start() {
+
     ifstream fin(INPUT_FILE_NAME);
 
     int N, M;
-    Color clr;
-    vector<vector<Color>> screen;
-
+    const double H = 1, W = 1, D = 1;
+    Color bgColor;
     fin >> N >> M;
-    double r, g, b;
-    fin >> r >> g >> b;
-    clr = Color(r, g, b);
-    screen.assign(N, vector<Color> (M, clr));
+    fin >> bgColor.r >> bgColor.g >> bgColor.b; 
+    vector<vector<Color>> screen(N, vector<Color> (M, bgColor));
+    vector<Light> lights;
+    vector<Sphere> spheres;
+    string type;
+    while (fin >> type) {
+        if (type == "light") {
+            Light light;
+            fin >> light.S.x >> light.S.y >> light.S.z;
+            light.intensity = 1;
+            lights.push_back(light);
+        } else if (type == "sphere") {
+            Sphere S;
+            fin >> S.O.x >> S.O.y >> S.O.z >> S.r >> S.color.r >> S.color.g >> S.color.b;
+            spheres.push_back(S);
+        }   
+    }
+
+    for (int i = 0; i < N; ++i) {
+        for (int j = 0; j < M; ++j) {
+            Vector B = Vector(-W / 2.0 + double(j) * W / double(M), H / 2.0 - double(i) * H / double(N), D);
+            Ray r(Point(0, 0, 0), B);
+            auto [I, S] = GetClosestIntersection(spheres, r);
+            if (I.x == INF) continue;
+            double koef = 0;
+            for (Light l : lights) {
+                Point Il = GetClosestIntersection(spheres, Ray(l.S, Vector(l.S, I))).first;
+                if (!(Il == I)) {
+                    continue;
+                }
+                koef += l.intensity * max(0.0, GetDotProduct(Vector(I, l.S).GetNormalized(), Vector(S.O, I).GetNormalized()));
+            }
+            screen[i][j] = S.color * koef;
+        }
+    }
 
     fin.close();
+
+    RenderPPM(screen);
 }
 
 int main() {
 
-    Play();
+    Start();
 
     return 0;
 }
