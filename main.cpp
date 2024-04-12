@@ -57,7 +57,7 @@ void Start() {
     ifstream fin(INPUT_FILE_NAME);
 
     int N, M;
-    const double H = 1, W = 1, D = 1;
+    const double H = 1, W = double(M) / double(N), D = 1;
     Color bgColor;
     fin >> N >> M;
     fin >> bgColor.r >> bgColor.g >> bgColor.b; 
