@@ -22,4 +22,3 @@
 `chmod +x run.sh`<br />
 `./run.sh`<br />
 Результат будет находиться в файле `photo.ppm`
-`./run.sh`
