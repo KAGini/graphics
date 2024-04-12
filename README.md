@@ -4,7 +4,7 @@
 1 Клонирование репозитория <br />
 ```git clone https://github.com/KAGini/graphics.git; cd graphics``` <br />
 ```git switch 3d-graphics```<br />
-2 Создайте файла congig.txt `touch config.txt`<br />
+2 Создайте файла config.txt `touch config.txt`<br />
 3 Конфигурация<br />
 **Цвета задаются в формате RGB и значениями от 0 до 1**<br />
 `bgr bgg bgb` - 1 строчка файла, цвет фона, например `0.5 0.5 0` - желтый<br />
